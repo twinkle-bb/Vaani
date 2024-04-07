@@ -2,6 +2,7 @@ package com.twink.vaani.adapter;
 
 import static android.app.PendingIntent.getActivity;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
@@ -31,13 +32,15 @@ import com.twink.vaani.upload.UploadImage;
 import com.twink.vaani.utils.Constant;
 import com.twink.vaani.utils.ThumbnailUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
-public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
+public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder> {
 
-    private final List<ImageModel> images;
+    private List<ImageModel> images;
 
     private final Context context;
 
@@ -56,7 +59,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
             public void onInit(int i) {
 
                 // if No error is found then only it will run
-                if (i!=TextToSpeech.ERROR){
+                if (i != TextToSpeech.ERROR) {
                     // To Choose language of speech
                     textToSpeech.setLanguage(new Locale("en", "IN"));
                 }
@@ -75,8 +78,8 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder,int position) {
-        ImageModel  image = images.get(position);
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        ImageModel image = images.get(position);
         holder.description.setText(image.getImg_desc());
         Bitmap bitmap = BitmapFactory.decodeByteArray(image.getImage(), 0, image.getImage().length);
         ThumbnailUtils.setThumbnail(bitmap, holder.image, context);
@@ -87,49 +90,49 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
                 textToSpeech.speak(description, TextToSpeech.QUEUE_FLUSH, null, null);
             }
         });
-       holder.deleteButton.setOnClickListener(new View.OnClickListener() {
-           @Override
-           public void onClick(View v) {
-               Log.d("==>","deleting record with Id and description: "+image.getId()+" "+image.getImg_desc());
-               images.remove(position);
-               imageRepo.deleteImage(image.getId());
-               notifyItemRemoved(position);
-           }
-       });
-       holder.updateButton.setOnClickListener(new View.OnClickListener() {
-           @Override
-           public void onClick(View v) {
-               AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
-               // Get the layout inflater.
-               LayoutInflater inflater =  LayoutInflater.from(v.getContext());
+        holder.deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d("==>", "deleting record with Id and description: " + image.getId() + " " + image.getImg_desc());
+                images.remove(position);
+                imageRepo.deleteImage(image.getId());
+                notifyItemRemoved(position);
+            }
+        });
+        holder.updateButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(v.getContext());
+                // Get the layout inflater.
+                LayoutInflater inflater = LayoutInflater.from(v.getContext());
 
-               View dialogView = inflater.inflate(R.layout.upload_image,null);
-               EditText description = dialogView.findViewById(R.id.name);
+                View dialogView = inflater.inflate(R.layout.upload_image, null);
+                EditText description = dialogView.findViewById(R.id.name);
 
-               builder.setView(dialogView)
-                       // Add action buttons
-                       .setPositiveButton("update", new DialogInterface.OnClickListener() {
-                           @Override
-                           public void onClick(DialogInterface dialog, int id) {
-                                if(!description.getText().toString().isEmpty()){
-                                    updateDescription(description.getText().toString(),image,position);
+                builder.setView(dialogView)
+                        // Add action buttons
+                        .setPositiveButton("update", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int id) {
+                                if (!description.getText().toString().isEmpty()) {
+                                    updateDescription(description.getText().toString(), image, position);
                                 }
-                           }
-                       })
-                       .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-                           public void onClick(DialogInterface dialog, int id) {
-                               dialog.cancel();
-                           }
+                            }
+                        })
+                        .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                dialog.cancel();
+                            }
 
 
-                       }).show();
-           }
-       });
+                        }).show();
+            }
+        });
     }
 
     private void updateDescription(String description, ImageModel image, int position) {
-        Log.d("==>","updating record with Id and description: "+image.getId()+" "+image.getImg_desc());
-        imageRepo.update(image.getId(),description);
+        Log.d("==>", "updating record with Id and description: " + image.getId() + " " + image.getImg_desc());
+        imageRepo.update(image.getId(), description);
         image.setImg_desc(description);
         notifyItemChanged(position);
     }
@@ -144,7 +147,14 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
         this.notifyItemInserted(images.size() - 1);
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
+    @SuppressLint("NotifyDataSetChanged")
+    public void importDataBase(InputStream inStream) throws IOException {
+        imageRepo.importDatabase(inStream);
+        images = imageRepo.getAllImages();
+        this.notifyDataSetChanged();
+    }
+
+    public class ViewHolder extends RecyclerView.ViewHolder {
 
         public ImageView image;
 
@@ -155,6 +165,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
         public ImageButton updateButton;
 
         public View card;
+
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             description = (TextView) itemView.findViewById(R.id.id_desc);

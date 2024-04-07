@@ -4,12 +4,22 @@ import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteCursorDriver;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteQuery;
+import android.net.Uri;
 
 import com.twink.vaani.model.ImageModel;
 import com.twink.vaani.repository.ImageRepo;
+import com.twink.vaani.utils.FileProvider;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +38,8 @@ public class ImageRepoImpl extends SQLiteOpenHelper implements ImageRepo {
     // database version
     static final int DB_VERSION = 1;
 
+    Context context;
+
     private static final String CREATE_TABLE = "create table " + TABLE_NAME + "(" + _ID
             + " INTEGER PRIMARY KEY AUTOINCREMENT," +
             " " + DESC + " TEXT NOT NULL, " +
@@ -35,6 +47,8 @@ public class ImageRepoImpl extends SQLiteOpenHelper implements ImageRepo {
 
     public ImageRepoImpl(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
+        this.context = context;
+
     }
 
     @Override
@@ -47,13 +61,14 @@ public class ImageRepoImpl extends SQLiteOpenHelper implements ImageRepo {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
         onCreate(db);
     }
+
     @Override
     public long addImage(ImageModel image) {
         SQLiteDatabase database = this.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put(DESC, image.getImg_desc());
         cv.put(IMAGE, image.getImage());
-        long key= database.insert( TABLE_NAME, null, cv );
+        long key = database.insert(TABLE_NAME, null, cv);
         return key;
     }
 
@@ -68,7 +83,7 @@ public class ImageRepoImpl extends SQLiteOpenHelper implements ImageRepo {
                 ImageModel image = new ImageModel();
                 image.setId(cursor.getInt(cursor.getColumnIndex(_ID)));
                 image.setImg_desc(cursor.getString(cursor.getColumnIndex(DESC)));
-                if(cursor.getBlob(cursor.getColumnIndex(IMAGE)) !=null){
+                if (cursor.getBlob(cursor.getColumnIndex(IMAGE)) != null) {
                     image.setImage(cursor.getBlob(cursor.getColumnIndex(IMAGE)));
                     images.add(image);
                 }
@@ -88,11 +103,28 @@ public class ImageRepoImpl extends SQLiteOpenHelper implements ImageRepo {
         database.delete(TABLE_NAME, _ID + "=" + id, null);
     }
 
-    public int update(Long _id ,String description) {
+    public int update(Long _id, String description) {
         SQLiteDatabase database = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put(DESC, description);
         int i = database.update(TABLE_NAME, contentValues, _ID + " = " + _id, null);
         return i;
+    }
+
+    @Override
+    public void importDatabase(InputStream mInput) throws IOException {
+
+        String uri = new FileProvider().getDatabaseURI(context).toString();
+        SQLiteDatabase database = this.getWritableDatabase();
+        OutputStream mOutput = Files.newOutputStream(Paths.get(database.getPath()));
+
+        byte[] mBuffer = new byte[1024];
+        int mLength;
+        while ((mLength = mInput.read(mBuffer)) > 0) {
+            mOutput.write(mBuffer, 0, mLength);
+        }
+        mOutput.flush();
+        mOutput.close();
+        mInput.close();
     }
 }

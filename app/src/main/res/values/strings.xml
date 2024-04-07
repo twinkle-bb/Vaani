@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Vaani</string>
+    <string name="upload_a_new_image">Upload a new image</string>
+    <string name="importDB">Import</string>
+    <string name="exportDB">Export</string>
+    <string name="options">Options\n</string>
 </resources>

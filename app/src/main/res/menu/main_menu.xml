@@ -5,10 +5,29 @@
     tools:context=".MainActivity">
 
 
-    <item android:id="@+id/addButton"
-        android:icon="@drawable/baseline_add_a_photo_24"
-        android:title="ADD"
-        app:showAsAction="always"/>
+    <item
+        android:id="@+id/empty"
+        android:title="@string/options"
+        android:orderInCategory="101"
+        app:showAsAction="always"
+        android:icon="@drawable/baseline_more_vert_24">
+
+        <menu>
+
+            <item android:id="@+id/import_db"
+                android:icon="@drawable/import_"
+                app:showAsAction="ifRoom"
+                android:title="@string/importDB" />
+
+            <item android:id="@+id/export_db"
+                android:icon="@drawable/export_"
+                app:showAsAction="ifRoom"
+                android:title="@string/exportDB" />
+
+        </menu>
+
+    </item>
+
 
 
 </menu>
